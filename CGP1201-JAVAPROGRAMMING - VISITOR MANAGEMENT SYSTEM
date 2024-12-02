@@ -1,0 +1,467 @@
+import java.awt.*;
+
+import java.awt.event.*;
+
+import java.time.LocalDateTime;
+
+import java.time.format.DateTimeFormatter;
+
+import java.util.ArrayList;
+
+import java.util.List;
+
+
+
+class Visitor {
+
+    private String name;
+
+    private String contact;
+
+    private String purpose;
+
+    private LocalDateTime checkInTime;
+
+    private LocalDateTime checkOutTime;
+
+
+
+    public Visitor(String name, String contact, String purpose) {
+
+        this.name = name;
+
+        this.contact = contact;
+
+        this.purpose = purpose;
+
+        this.checkInTime = LocalDateTime.now();
+
+        this.checkOutTime = null;
+
+    }
+
+
+
+    public void checkOut() {
+
+        this.checkOutTime = LocalDateTime.now();
+
+    }
+
+
+
+    public String getName() {
+
+        return name;
+
+    }
+
+
+
+    public LocalDateTime getCheckInTime() {
+
+        return checkInTime;
+
+    }
+
+
+
+    public boolean isCheckedOut() {
+
+        return checkOutTime != null;
+
+    }
+
+
+
+    public String getFormattedCheckInTime() {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        return checkInTime.format(formatter);
+
+    }
+
+
+
+    public String getFormattedCheckOutTime() {
+
+        if (checkOutTime != null) {
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            return checkOutTime.format(formatter);
+
+        }
+
+        return "Not available";
+
+    }
+
+
+
+    @Override
+
+    public String toString() {
+
+        return "Name: " + name + ", Check-in: " + getFormattedCheckInTime() +
+
+                ", Check-out: " + getFormattedCheckOutTime();
+
+    }
+
+}
+
+
+
+public class VisitorManagementSystemAWT extends Frame {
+
+    private List<Visitor> visitors = new ArrayList<>();
+
+    private final String adminPassword = "sharkesh"; // Admin password
+
+
+
+    private TextField nameField, contactField, purposeField;
+
+    private Button registerButton, checkOutButton, currentVisitorsButton, allHistoryButton, exitButton;
+
+    private TextArea displayArea;
+
+
+
+    public VisitorManagementSystemAWT() {
+
+        setLayout(new FlowLayout());
+
+        setTitle("Visitor Management System");
+
+        setSize(600, 400);
+
+
+
+        // Labels and Input Fields
+
+        add(new Label("Name:"));
+
+        nameField = new TextField(20);
+
+        add(nameField);
+
+
+
+        add(new Label("Contact:"));
+
+        contactField = new TextField(20);
+
+        add(contactField);
+
+
+
+        add(new Label("Purpose:"));
+
+        purposeField = new TextField(20);
+
+        add(purposeField);
+
+
+
+        // Buttons
+
+        registerButton = new Button("Register Visitor");
+
+        add(registerButton);
+
+
+
+        checkOutButton = new Button("Check-out Visitor");
+
+        add(checkOutButton);
+
+
+
+        currentVisitorsButton = new Button("Current Visitors");
+
+        add(currentVisitorsButton);
+
+
+
+        allHistoryButton = new Button("Visitor History");
+
+        add(allHistoryButton);
+
+
+
+        exitButton = new Button("Exit");
+
+        add(exitButton);
+
+
+
+        // Display Area
+
+        displayArea = new TextArea(15, 50);
+
+        displayArea.setEditable(false);
+
+        add(displayArea);
+
+
+
+        // Button Actions
+
+        registerButton.addActionListener(e -> registerVisitor());
+
+        checkOutButton.addActionListener(e -> checkOutVisitor());
+
+        currentVisitorsButton.addActionListener(e -> displayCurrentVisitors());
+
+        allHistoryButton.addActionListener(e -> promptForPassword());
+
+        exitButton.addActionListener(e -> System.exit(0));
+
+
+
+        // Close Window Action
+
+        addWindowListener(new WindowAdapter() {
+
+            public void windowClosing(WindowEvent e) {
+
+                System.exit(0);
+
+            }
+
+        });
+
+
+
+        setVisible(true);
+
+    }
+
+
+
+    private void registerVisitor() {
+
+        String name = nameField.getText().trim();
+
+        String contact = contactField.getText().trim();
+
+        String purpose = purposeField.getText().trim();
+
+
+
+        if (name.isEmpty() || contact.isEmpty() || purpose.isEmpty()) {
+
+            displayArea.setText("All fields are required for registration.\n");
+
+            return;
+
+        }
+
+
+
+        Visitor newVisitor = new Visitor(name, contact, purpose);
+
+        visitors.add(newVisitor);
+
+        displayArea.setText("Visitor " + name + " successfully checked in at " + newVisitor.getFormattedCheckInTime() + ".\n");
+
+
+
+        clearFields();
+
+    }
+
+
+
+    private void checkOutVisitor() {
+
+        String name = nameField.getText().trim();
+
+
+
+        if (name.isEmpty()) {
+
+            displayArea.setText("Please enter the name of the visitor to check out.\n");
+
+            return;
+
+        }
+
+
+
+        boolean found = false;
+
+        for (Visitor visitor : visitors) {
+
+            if (visitor.getName().equalsIgnoreCase(name) && !visitor.isCheckedOut()) {
+
+                visitor.checkOut();
+
+                displayArea.setText("Visitor " + name + " checked out at " + visitor.getFormattedCheckOutTime() + ".\n");
+
+                found = true;
+
+                break;
+
+            }
+
+        }
+
+
+
+        if (!found) {
+
+            displayArea.setText("Visitor not found or already checked out.\n");
+
+        }
+
+
+
+        clearFields();
+
+    }
+
+
+
+    private void displayCurrentVisitors() {
+
+        StringBuilder output = new StringBuilder("Current Visitors:\n");
+
+        for (Visitor visitor : visitors) {
+
+            if (!visitor.isCheckedOut()) {
+
+                output.append(visitor.toString()).append("\n");
+
+            }
+
+        }
+
+        if (output.length() == 16) { // No visitors found
+
+            output.append("No visitors are currently checked in.\n");
+
+        }
+
+        displayArea.setText(output.toString());
+
+    }
+
+
+
+    private void promptForPassword() {
+
+        String inputPassword = getPasswordFromUser();
+
+        if (inputPassword.equals(adminPassword)) {
+
+            displayAllVisitorHistory();
+
+        } else {
+
+            displayArea.setText("Incorrect password. Access denied.\n");
+
+        }
+
+    }
+
+
+
+    private String getPasswordFromUser() {
+
+        Frame passwordFrame = new Frame("Enter Password");
+
+        Dialog passwordDialog = new Dialog(passwordFrame, "Password", true);
+
+        passwordDialog.setLayout(new FlowLayout());
+
+        passwordDialog.setSize(300, 150);
+
+
+
+        Label passwordLabel = new Label("Enter Admin Password:");
+
+        TextField passwordField = new TextField(20);
+
+        passwordField.setEchoChar('*');
+
+        Button submitButton = new Button("Submit");
+
+
+
+        passwordDialog.add(passwordLabel);
+
+        passwordDialog.add(passwordField);
+
+        passwordDialog.add(submitButton);
+
+
+
+        final String[] passwordInput = {null};
+
+
+
+        submitButton.addActionListener(e -> {
+
+            passwordInput[0] = passwordField.getText();
+
+            passwordDialog.setVisible(false);
+
+        });
+
+
+
+        passwordDialog.setVisible(true);
+
+
+
+        return passwordInput[0] != null ? passwordInput[0] : "";
+
+    }
+
+
+
+    private void displayAllVisitorHistory() {
+
+        StringBuilder output = new StringBuilder("All Visitor History:\n");
+
+        for (Visitor visitor : visitors) {
+
+            output.append(visitor.toString()).append("\n");
+
+        }
+
+        if (output.length() == 20) { // No visitors found
+
+            output.append("No visitor history found.\n");
+
+        }
+
+        displayArea.setText(output.toString());
+
+    }
+
+
+
+    private void clearFields() {
+
+        nameField.setText("");
+
+        contactField.setText("");
+
+        purposeField.setText("");
+
+    }
+
+
+
+    public static void main(String[] args) {
+
+        new VisitorManagementSystemAWT();
+
+    }
+
+}  in this code put the block diagam be unique
